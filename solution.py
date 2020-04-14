@@ -111,21 +111,23 @@ def get_messages(input_):
                 break
         except KeyboardInterrupt:
             break
-    if len(_messages) > 0 and _messages[-1] == '':
-        _messages = _messages[:len(_messages) - 1]
     return _messages
 
 
 def stream_encode(_key, _input, _output):
     messages = get_messages(_input)
     if args.cipher == "caesar":
-        for message in messages:
-            _output.write(caesar_encryption(message, int(args.key)))
+        for i in range(len(messages) - 1):
+            _output.write(caesar_encryption(messages[i], int(args.key)))
             _output.write('\n')
+        if len(messages) > 0:
+            _output.write(caesar_encryption(messages[-1], int(args.key)))
     elif args.cipher == "vigenere":
-        for message in messages:
-            _output.write(vig_encryption(message, args.key))
+        for i in range(len(messages) - 1):
+            _output.write(vig_encryption(messages[i], args.key))
             _output.write('\n')
+        if len(messages) > 0:
+            _output.write(vig_encryption(messages[-1], args.key))
 
 
 def encode():
@@ -143,11 +145,17 @@ def encode():
 def stream_decode(_key, _input, _output):
     messages = get_messages(_input)
     if args.cipher == "caesar":
-        for message in messages:
-            _output.write(caesar_decryption(message, int(args.key)))
+        for i in range(len(messages) - 1):
+            _output.write(caesar_decryption(messages[i], int(args.key)))
+            _output.write('\n')
+        if len(messages) > 0:
+            _output.write(caesar_decryption(messages[-1], int(args.key)))
     elif args.cipher == "vigenere":
-        for message in messages:
-            _output.write(vig_decryption(message, args.key))
+        for i in range(len(messages) - 1):
+            _output.write(vig_decryption(messages[i], args.key))
+            _output.write('\n')
+        if len(messages) > 0:
+            _output.write(vig_decryption(messages[-1], args.key))
 
 
 def decode():
@@ -199,14 +207,11 @@ def caesar_breaking():
     # out_file - файл с исходным текстом
     out_file = get_output()
     lines = freq_file.read().split('\n')
-    if lines[-1] == '':
-        lines = lines[:len(lines) - 1]
     symbols_freq = list()
     for i in range(ord("Z") - ord("A") + 1 + ord("z") - ord("a") + 1):
         lines[i] = lines[i].split()
         # тк частота символа находится после него и тире
         symbols_freq.append(int(lines[i][2]))
-    # for step in range(ord("Z") - ord("A") + 1):
     messages = get_messages(in_file)
     # шаг между "A" и "a"
     step1 = ord("Z") - ord("A") + 1
@@ -233,9 +238,11 @@ def caesar_breaking():
             min_check = check
             best_step = try_step
     # теперь знаем лучший шаг
-    for message in messages:
-        out_file.write(caesar_decryption(message, best_step))
+    for i in range(len(messages) - 1):
+        out_file.write(caesar_decryption(messages[i], best_step))
         out_file.write('\n')
+    if len(messages) > 0:
+        out_file.write(caesar_decryption(messages[i], best_step))
     if args.input_file is not None:
         in_file.close()
     freq_file.close()
