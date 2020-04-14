@@ -109,7 +109,7 @@ def get_messages(input_):
             _messages.append(line)
             if line == '':
                 break
-        except:
+        except EOFError:
             break
     if _messages[-1] == '':
         _messages = _messages[:len(_messages) - 1]
@@ -260,4 +260,3 @@ if __name__ == "__main__":
         count_symbol_frequency()
     elif args.operation == "caesar_breaking":
         caesar_breaking()
-
