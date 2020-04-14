@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 
 def count_frequency(a, freq_list):
@@ -86,6 +87,162 @@ def vig_decryption(a, key_word) -> str:
     return copy
 
 
+def get_input():
+    _in_file = sys.stdin
+    if args.input_file is not None:
+        _in_file = open(args.input_file, "r")
+    return _in_file
+
+
+def get_output():
+    _out_file = sys.stdout
+    if args.output_file is not None:
+        _out_file = open(args.output_file, "w")
+    return _out_file
+
+
+def get_messages(input_):
+    _messages = list()
+    while True:
+        try:
+            line = input_.readline()
+            _messages.append(line)
+            if line == '':
+                break
+        except:
+            break
+    if _messages[-1] == '':
+        _messages = _messages[:len(_messages) - 1]
+    return _messages
+
+
+def stream_encode(_key, _input, _output):
+    messages = get_messages(_input)
+    if args.cipher == "caesar":
+        for message in messages:
+            _output.write(caesar_encryption(message, int(args.key)))
+            _output.write('\n')
+    elif args.cipher == "vigenere":
+        for message in messages:
+            _output.write(vig_encryption(message, args.key))
+            _output.write('\n')
+
+
+def encode():
+    # in_file - файл с исходным текстом
+    in_file = get_input()
+    # out_file - файл с зашифрованным текстом
+    out_file = get_output()
+    stream_encode(int(args.key), in_file, out_file)
+    if args.input_file is not None:
+        in_file.close()
+    if args.output_file is not None:
+        out_file.close()
+
+
+def stream_decode(_key, _input, _output):
+    messages = get_messages(_input)
+    if args.cipher == "caesar":
+        for message in messages:
+            _output.write(caesar_decryption(message, int(args.key)))
+    elif args.cipher == "vigenere":
+        for message in messages:
+            _output.write(vig_decryption(message, args.key))
+
+
+def decode():
+    # in_file - файл с зашифрованным текстом
+    in_file = get_input()
+    # out_file - файл с исходным текстом
+    out_file = get_output()
+    stream_decode(int(args.key), in_file, out_file)
+    if args.input_file is not None:
+        in_file.close()
+    if args.output_file is not None:
+        out_file.close()
+
+
+def count_symbol_frequency():
+    # тк входной текст большой, то нет смысла вводить его через консоль,
+    # поэтому сделаем только ввод из файла
+    # in_file - большой текст
+    in_file = open(args.input_file, "r")
+    # out_file - файл с частотами символов
+    out_file = sys.stdout
+    if args.output_file is not None:
+        out_file = open(args.output_file, "w")
+    lines = in_file.read()
+    symbols_freq = [0 for i in range(ord("A"), ord("Z") + 1)]
+    for i in range(ord("a"), ord("z") + 1):
+        symbols_freq.append(0)
+    for line in lines:
+        symbols_freq = count_frequency(line, symbols_freq)
+    # шаг между "A" и "a"
+    step1 = ord("Z") - ord("A") + 1
+    # пишем в столбик: заглавная латинская буква - ее число
+    for i in range(step1):
+        out_file.write(chr(ord("A") + i) + " - " + str(symbols_freq[i]) + '\n')
+    # пишем в столбик: строчная латинская буква - ее число
+    for i in range(step1, step1 + ord("z") - ord("a") + 1):
+        out_file.write(chr(ord("a") + i - step1) + " - " + str(symbols_freq[i]) + '\n')
+    in_file.close()
+    if args.output_file is not None:
+        out_file.close()
+
+
+def caesar_breaking():
+    # in_file - файл с зашифрованным текстом
+    in_file = get_input()
+    # вводить "частоты" букв в консоли - тяжело, сделаем только ввод из файла
+    # freq_file - файл с частотами символов
+    freq_file = open(args.file_with_symbols_frequency, "r")
+    # out_file - файл с исходным текстом
+    out_file = get_output()
+    lines = freq_file.read().split('\n')
+    if lines[-1] == '':
+        lines = lines[:len(lines) - 1]
+    symbols_freq = list()
+    for i in range(ord("Z") - ord("A") + 1 + ord("z") - ord("a") + 1):
+        lines[i] = lines[i].split()
+        # тк частота символа находится после него и тире
+        symbols_freq.append(int(lines[i][2]))
+    # for step in range(ord("Z") - ord("A") + 1):
+    messages = get_messages(in_file)
+    # шаг между "A" и "a"
+    step1 = ord("Z") - ord("A") + 1
+    # проверим сами строки без изменений
+    near_symbols_freq = [0 for i in range((ord("Z") - ord("A") + 1) * 2)]
+    for message in messages:
+        near_symbols_freq = count_frequency(message, near_symbols_freq)
+    # наиболее подходящий шаг расшивровки
+    best_step = 0
+    # наименьшее отклонение от частот символов
+    min_check = 0
+    for i in range(len(symbols_freq)):
+        min_check += (symbols_freq[i] - near_symbols_freq[i]) ** 2
+    # проверим измененные строки
+    for try_step in range(1, ord("Z") - ord("A") + 1):
+        near_symbols_freq = [0 for i in range((ord("Z") - ord("A") + 1) * 2)]
+        for message in messages:
+            near_message = caesar_decryption(message, try_step)
+            near_symbols_freq = count_frequency(near_message, near_symbols_freq)
+        check = 0
+        for i in range(len(symbols_freq)):
+            check += (symbols_freq[i] - near_symbols_freq[i]) ** 2
+        if check < min_check:
+            min_check = check
+            best_step = try_step
+    # теперь знаем лучший шаг
+    for message in messages:
+        out_file.write(caesar_decryption(message, best_step))
+        out_file.write('\n')
+    if args.input_file is not None:
+        in_file.close()
+    freq_file.close()
+    if args.output_file is not None:
+        out_file.close()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", type=str)
@@ -96,103 +253,11 @@ if __name__ == "__main__":
     parser.add_argument("--file_with_symbols_frequency", action="store")
     args = parser.parse_args()
     if args.operation == "encode":
-        # in_file - файл с исходным текстом
-        in_file = open(args.input_file, "r")
-        # out_file - файл с зашифрованным текстом
-        out_file = open(args.output_file, "w")
-        messages = in_file.read().split('\n')
-        if messages[-1] == '':
-            messages = messages[:len(messages) - 1]
-        if args.cipher == "caesar":
-            for message in messages:
-                out_file.write(caesar_encryption(message, int(args.key)))
-                out_file.write('\n')
-        elif args.cipher == "vigenere":
-            for message in messages:
-                out_file.write(vig_encryption(message, args.key))
-                out_file.write('\n')
-        in_file.close()
-        out_file.close()
+        encode()
     elif args.operation == "decode":
-        # in_file - файл с зашифрованным текстом
-        in_file = open(args.input_file, "r")
-        # out_file - файл с исходным текстом
-        out_file = open(args.output_file, "w")
-        message = in_file.readline()
-        if args.cipher == "caesar":
-            out_file.write(caesar_decryption(message, int(args.key)))
-        elif args.cipher == "vigenere":
-            out_file.write(vig_decryption(message, args.key))
-        in_file.close()
-        out_file.close()
+        decode()
     elif args.operation == "count_symbol_frequency":
-        # in_file - большой текст
-        in_file = open(args.input_file, "r")
-        # out_file - файл с частотами символов
-        out_file = open(args.output_file, "w")
-        lines = in_file.read()
-        symbols_freq = [0 for i in range(ord("A"), ord("Z") + 1)]
-        for i in range(ord("a"), ord("z") + 1):
-            symbols_freq.append(0)
-        for line in lines:
-            symbols_freq = count_frequency(line, symbols_freq)
-        # шаг между "A" и "a"
-        step1 = ord("Z") - ord("A") + 1
-        # пишем в столбик: заглавная латинская буква - ее число
-        for i in range(step1):
-            out_file.write(chr(ord("A") + i) + " - " + str(symbols_freq[i]) + '\n')
-        # пишем в столбик: строчная латинская буква - ее число
-        for i in range(step1, step1 + ord("z") - ord("a") + 1):
-            out_file.write(chr(ord("a") + i - step1) + " - " + str(symbols_freq[i]) + '\n')
-        in_file.close()
-        out_file.close()
+        count_symbol_frequency()
     elif args.operation == "caesar_breaking":
-        # in_file - файл с зашифрованным текстом
-        in_file = open(args.input_file, "r")
-        # freq_file - файл с частотами символов
-        freq_file = open(args.file_with_symbols_frequency, "r")
-        # out_file - файл с исходным текстом
-        out_file = open(args.output_file, "w")
-        lines = freq_file.read().split('\n')
-        if lines[-1] == '':
-            lines = lines[:len(lines) - 1]
-        symbols_freq = list()
-        for i in range(ord("Z") - ord("A") + 1 + ord("z") - ord("a") + 1):
-            lines[i] = lines[i].split()
-            # тк частота символа находится после него и тире
-            symbols_freq.append(int(lines[i][2]))
-        # for step in range(ord("Z") - ord("A") + 1):
-        messages = in_file.read().split('\n')
-        if messages[-1] == '':
-            messages = messages[:len(messages) - 1]
-        # шаг между "A" и "a"
-        step1 = ord("Z") - ord("A") + 1
-        # проверим сами строки без изменений
-        near_symbols_freq = [0 for i in range((ord("Z") - ord("A") + 1) * 2)]
-        for message in messages:
-            near_symbols_freq = count_frequency(message, near_symbols_freq)
-        # наиболее подходящий шаг расшивровки
-        best_step = 0
-        # наименьшее отклонение от частот символов
-        min_check = 0
-        for i in range(len(symbols_freq)):
-            min_check += (symbols_freq[i] - near_symbols_freq[i]) ** 2
-        # проверим измененные строки
-        for try_step in range(1, ord("Z") - ord("A") + 1):
-            near_symbols_freq = [0 for i in range((ord("Z") - ord("A") + 1) * 2)]
-            for message in messages:
-                near_message = caesar_decryption(message, try_step)
-                near_symbols_freq = count_frequency(near_message, near_symbols_freq)
-            check = 0
-            for i in range(len(symbols_freq)):
-                check += (symbols_freq[i] - near_symbols_freq[i]) ** 2
-            if check < min_check:
-                min_check = check
-                best_step = try_step
-        # теперь знаем лучший шаг
-        for message in messages:
-            out_file.write(caesar_decryption(message, best_step))
-            out_file.write('\n')
-        in_file.close()
-        freq_file.close()
-        out_file.close()
+        caesar_breaking()
+
