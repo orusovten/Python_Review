@@ -12,6 +12,7 @@ def count_frequency(a, freq_list):
 
 
 def caesar_encryption(a, step) -> str:
+    step %= (ord("Z") - ord("A"))
     copy = str()
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
@@ -30,6 +31,7 @@ def caesar_encryption(a, step) -> str:
 
 
 def caesar_decryption(a, step) -> str:
+    step %= (ord("Z") - ord("A"))
     copy = str()
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
@@ -51,19 +53,17 @@ def vig_encryption(a, key_word) -> str:
     copy = str()
     low_key_word = key_word.lower()
     up_key_word = key_word.upper()
+    len_up = ord("Z") - ord("A")
+    len_low = ord("z") - ord("a")
+    for_cycle_up = ord("A") % len_up
+    for_cycle_low = ord("a") % len_low
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
-            tmp = (ord(up_key_word[i % len(up_key_word)]) + ord(a[i]) - ord("A")) % ord("Z")
-            if tmp < ord("A"):
-                copy += chr(tmp + ord("A") - 1)
-            else:
-                copy += chr(tmp)
+            tmp = ord(up_key_word[i % len(up_key_word)]) + ord(a[i]) - ord("A") - for_cycle_up
+            copy += chr(tmp % len_up - tmp // len_up + ord("A") // len_up + ord("A"))
         elif "a" <= a[i] <= "z":
-            tmp = (ord(low_key_word[i % len(low_key_word)]) + ord(a[i]) - ord("a")) % ord("z")
-            if tmp < ord("a"):
-                copy += chr(tmp + ord("a") - 1)
-            else:
-                copy += chr(tmp)
+            tmp = ord(low_key_word[i % len(low_key_word)]) + ord(a[i]) - ord("a") - for_cycle_low
+            copy += chr(tmp % len_low - tmp // len_low + ord("a") // len_low + ord("a"))
     return copy
 
 
@@ -109,9 +109,9 @@ def get_messages(input_):
             _messages.append(line)
             if line == '':
                 break
-        except EOFError:
+        except KeyboardInterrupt:
             break
-    if _messages[-1] == '':
+    if len(_messages) > 0 and _messages[-1] == '':
         _messages = _messages[:len(_messages) - 1]
     return _messages
 
@@ -133,7 +133,7 @@ def encode():
     in_file = get_input()
     # out_file - файл с зашифрованным текстом
     out_file = get_output()
-    stream_encode(int(args.key), in_file, out_file)
+    stream_encode(args.key, in_file, out_file)
     if args.input_file is not None:
         in_file.close()
     if args.output_file is not None:
@@ -155,7 +155,7 @@ def decode():
     in_file = get_input()
     # out_file - файл с исходным текстом
     out_file = get_output()
-    stream_decode(int(args.key), in_file, out_file)
+    stream_decode(args.key, in_file, out_file)
     if args.input_file is not None:
         in_file.close()
     if args.output_file is not None:
