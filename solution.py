@@ -242,7 +242,7 @@ def caesar_breaking():
         out_file.write(caesar_decryption(messages[i], best_step))
         out_file.write('\n')
     if len(messages) > 0:
-        out_file.write(caesar_decryption(messages[i], best_step))
+        out_file.write(caesar_decryption(messages[-1], best_step))
     if args.input_file is not None:
         in_file.close()
     freq_file.close()
