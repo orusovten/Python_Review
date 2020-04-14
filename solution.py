@@ -12,7 +12,7 @@ def count_frequency(a, freq_list):
 
 
 def caesar_encryption(a, step) -> str:
-    step %= (ord("Z") - ord("A"))
+    step %= (ord("Z") - ord("A") + 1)
     copy = str()
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
@@ -31,7 +31,7 @@ def caesar_encryption(a, step) -> str:
 
 
 def caesar_decryption(a, step) -> str:
-    step %= (ord("Z") - ord("A"))
+    step %= (ord("Z") - ord("A") + 1)
     copy = str()
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
@@ -88,10 +88,12 @@ def vig_decryption(a, key_word) -> str:
 
 
 def get_input():
+    is_keyboard_ = True
     _in_file = sys.stdin
     if args.input_file is not None:
+        is_keyboard_ = False
         _in_file = open(args.input_file, "r")
-    return _in_file
+    return [_in_file, is_keyboard_]
 
 
 def get_output():
@@ -101,21 +103,22 @@ def get_output():
     return _out_file
 
 
-def get_messages(input_):
+def get_messages(input_, _is_keyboard):
     _messages = list()
-    while True:
-        try:
-            line = input_.readline()
-            _messages.append(line)
-            if line == '':
+    if _is_keyboard:
+        while True:
+            try:
+                line = input_.readline()
+                _messages.append(line)
+            except KeyboardInterrupt:
                 break
-        except KeyboardInterrupt:
-            break
+    else:
+        _messages = input_.read().split('\n')
     return _messages
 
 
-def stream_encode(_key, _input, _output):
-    messages = get_messages(_input)
+def stream_encode(_key, _input, _output, _keyboard):
+    messages = get_messages(_input, _keyboard)
     if args.cipher == "caesar":
         for i in range(len(messages) - 1):
             _output.write(caesar_encryption(messages[i], int(args.key)))
@@ -132,18 +135,18 @@ def stream_encode(_key, _input, _output):
 
 def encode():
     # in_file - файл с исходным текстом
-    in_file = get_input()
+    in_file, is_keyboard = get_input()
     # out_file - файл с зашифрованным текстом
     out_file = get_output()
-    stream_encode(args.key, in_file, out_file)
+    stream_encode(args.key, in_file, out_file, is_keyboard)
     if args.input_file is not None:
         in_file.close()
     if args.output_file is not None:
         out_file.close()
 
 
-def stream_decode(_key, _input, _output):
-    messages = get_messages(_input)
+def stream_decode(_key, _input, _output, _keyboard):
+    messages = get_messages(_input, _keyboard)
     if args.cipher == "caesar":
         for i in range(len(messages) - 1):
             _output.write(caesar_decryption(messages[i], int(args.key)))
@@ -160,10 +163,10 @@ def stream_decode(_key, _input, _output):
 
 def decode():
     # in_file - файл с зашифрованным текстом
-    in_file = get_input()
+    in_file, is_keyboard = get_input()
     # out_file - файл с исходным текстом
     out_file = get_output()
-    stream_decode(args.key, in_file, out_file)
+    stream_decode(args.key, in_file, out_file, is_keyboard)
     if args.input_file is not None:
         in_file.close()
     if args.output_file is not None:
@@ -200,7 +203,7 @@ def count_symbol_frequency():
 
 def caesar_breaking():
     # in_file - файл с зашифрованным текстом
-    in_file = get_input()
+    in_file, is_keyboard = get_input()
     # вводить "частоты" букв в консоли - тяжело, сделаем только ввод из файла
     # freq_file - файл с частотами символов
     freq_file = open(args.file_with_symbols_frequency, "r")
@@ -212,7 +215,7 @@ def caesar_breaking():
         lines[i] = lines[i].split()
         # тк частота символа находится после него и тире
         symbols_freq.append(int(lines[i][2]))
-    messages = get_messages(in_file)
+    messages = get_messages(in_file, is_keyboard)
     # шаг между "A" и "a"
     step1 = ord("Z") - ord("A") + 1
     # проверим сами строки без изменений
