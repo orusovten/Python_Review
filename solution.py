@@ -11,22 +11,43 @@ def count_frequency(a, freq_list):
     return freq_list
 
 
+def shift(symbol, shift_size) -> str:
+    shift_size %= 27
+    if "A" <= symbol <= "Z":
+        tmp = ord(symbol) + shift_size
+        if tmp <= ord("Z"):
+            return chr(tmp)
+        else:
+            return chr(ord("A") + tmp - ord("Z") - 1)
+    elif "a" <= symbol <= "z":
+        tmp = ord(symbol) + shift_size
+        if tmp <= ord("z"):
+            return chr(tmp)
+        else:
+            return chr(ord("a") + tmp - ord("z") - 1)
+
+
+def unshift(symbol, shift_size) -> str:
+    shift_size %= 27
+    if "A" <= symbol <= "Z":
+        tmp = ord(symbol) - shift_size
+        if tmp >= ord("A"):
+            return chr(tmp)
+        else:
+            return chr(ord("Z") - ord("A") + tmp + 1)
+    elif "a" <= symbol <= "z":
+        tmp = ord(symbol) - shift_size
+        if tmp >= ord("a"):
+            return chr(tmp)
+        else:
+            return chr(ord("z") - ord("a") + tmp + 1)
+
+
 def caesar_encryption(a, step) -> str:
     step %= (ord("Z") - ord("A") + 1)
     copy = str()
     for i in range(len(a)):
-        if "A" <= a[i] <= "Z":
-            tmp = ord(a[i]) + step
-            if tmp <= ord("Z"):
-                copy += chr(tmp)
-            else:
-                copy += chr(ord("A") + tmp - ord("Z") - 1)
-        elif "a" <= a[i] <= "z":
-            tmp = ord(a[i]) + step
-            if tmp <= ord("z"):
-                copy += chr(tmp)
-            else:
-                copy += chr(ord("a") + tmp - ord("z") - 1)
+        copy += shift(a[i], step)
     return copy
 
 
@@ -34,18 +55,7 @@ def caesar_decryption(a, step) -> str:
     step %= (ord("Z") - ord("A") + 1)
     copy = str()
     for i in range(len(a)):
-        if "A" <= a[i] <= "Z":
-            tmp = ord(a[i]) - step
-            if tmp >= ord("A"):
-                copy += chr(tmp)
-            else:
-                copy += chr(ord("Z") - ord("A") + tmp + 1)
-        elif "a" <= a[i] <= "z":
-            tmp = ord(a[i]) - step
-            if tmp >= ord("a"):
-                copy += chr(tmp)
-            else:
-                copy += chr(ord("z") - ord("a") + tmp + 1)
+        copy += unshift(a[i], step)
     return copy
 
 
@@ -53,17 +63,11 @@ def vig_encryption(a, key_word) -> str:
     copy = str()
     low_key_word = key_word.lower()
     up_key_word = key_word.upper()
-    len_up = ord("Z") - ord("A")
-    len_low = ord("z") - ord("a")
-    for_cycle_up = ord("A") % len_up
-    for_cycle_low = ord("a") % len_low
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
-            tmp = ord(up_key_word[i % len(up_key_word)]) + ord(a[i]) - ord("A") - for_cycle_up
-            copy += chr(tmp % len_up - tmp // len_up + ord("A") // len_up + ord("A"))
+            copy += shift(up_key_word[i % len(up_key_word)], ord(a[i]) - ord("A"))
         elif "a" <= a[i] <= "z":
-            tmp = ord(low_key_word[i % len(low_key_word)]) + ord(a[i]) - ord("a") - for_cycle_low
-            copy += chr(tmp % len_low - tmp // len_low + ord("a") // len_low + ord("a"))
+            copy += shift(low_key_word[i % len(low_key_word)], ord(a[i]) - ord("a"))
     return copy
 
 
@@ -73,17 +77,9 @@ def vig_decryption(a, key_word) -> str:
     up_key_word = key_word.upper()
     for i in range(len(a)):
         if "A" <= a[i] <= "Z":
-            tmp = ord(a[i]) - ord(up_key_word[i % len(up_key_word)])
-            if tmp >= 0:
-                copy += chr(tmp + ord("A"))
-            else:
-                copy += chr(ord("Z") + tmp + 1)
+            copy += shift(a[i], 26 - ord(up_key_word[i % len(up_key_word)]) + ord("A"))
         elif "a" <= a[i] <= "z":
-            tmp = ord(a[i]) - ord(low_key_word[i % len(low_key_word)])
-            if tmp >= 0:
-                copy += chr(tmp + ord("a"))
-            else:
-                copy += chr(ord("z") + tmp + 1)
+            copy += shift(a[i], 26 - ord(low_key_word[i % len(low_key_word)]) + ord("a"))
     return copy
 
 
