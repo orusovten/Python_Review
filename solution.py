@@ -25,6 +25,8 @@ def shift(symbol, shift_size) -> str:
             return chr(tmp)
         else:
             return chr(ord("a") + tmp - ord("z") - 1)
+    else:
+        return symbol
 
 
 def unshift(symbol, shift_size) -> str:
@@ -41,6 +43,8 @@ def unshift(symbol, shift_size) -> str:
             return chr(tmp)
         else:
             return chr(ord("z") - ord("a") + tmp + 1)
+    else:
+        return symbol
 
 
 def caesar_encryption(a, step) -> str:
@@ -68,6 +72,8 @@ def vig_encryption(a, key_word) -> str:
             copy += shift(up_key_word[i % len(up_key_word)], ord(a[i]) - ord("A"))
         elif "a" <= a[i] <= "z":
             copy += shift(low_key_word[i % len(low_key_word)], ord(a[i]) - ord("a"))
+        else:
+            copy += a[i]
     return copy
 
 
@@ -80,6 +86,8 @@ def vig_decryption(a, key_word) -> str:
             copy += shift(a[i], 26 - ord(up_key_word[i % len(up_key_word)]) + ord("A"))
         elif "a" <= a[i] <= "z":
             copy += shift(a[i], 26 - ord(low_key_word[i % len(low_key_word)]) + ord("a"))
+        else:
+            copy += a[i]
     return copy
 
 
