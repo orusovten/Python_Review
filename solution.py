@@ -1,5 +1,5 @@
-import argparse
 import sys
+import argparse
 from collections import defaultdict
 import json
 import string
@@ -45,7 +45,7 @@ def open_messages_and_output():
     _out_file = sys.stdout
     if args.output_file is not None:
         _out_file = open(args.output_file, "w")
-    _messages = _in_file.read().split('\n')
+    _messages = _in_file.read()
     return _in_file, _messages, _out_file
 
 
@@ -59,47 +59,30 @@ def close_in_and_out_files(_input, _output):
 def encode(args):
     in_file, messages, out_file = open_messages_and_output()
     if args.cipher == "caesar":
-        for i in range(len(messages) - 1):
-            out_file.write(caesar_encryption(messages[i], int(args.key)))
-            out_file.write('\n')
-        if len(messages) > 0:
-            out_file.write(caesar_encryption(messages[-1], int(args.key)))
+        out_file.write(caesar_encryption(messages, int(args.key)))
     elif args.cipher == "vigenere":
-        for i in range(len(messages) - 1):
-            out_file.write(vig_encryption(messages[i], args.key))
-            out_file.write('\n')
-        if len(messages) > 0:
-            out_file.write(vig_encryption(messages[-1], args.key))
+        out_file.write(vig_encryption(messages, args.key))
     close_in_and_out_files(in_file, out_file)
 
 
 def decode(args):
     in_file, messages, out_file = open_messages_and_output()
     if args.cipher == "caesar":
-        for i in range(len(messages) - 1):
-            out_file.write(caesar_decryption(messages[i], int(args.key)))
-            out_file.write('\n')
-        if len(messages) > 0:
-            out_file.write(caesar_decryption(messages[-1], int(args.key)))
+        out_file.write(caesar_decryption(messages, int(args.key)))
     elif args.cipher == "vigenere":
-        for i in range(len(messages) - 1):
-            out_file.write(vig_decryption(messages[i], args.key))
-            out_file.write('\n')
-        if len(messages) > 0:
-            out_file.write(vig_decryption(messages[-1], args.key))
+        out_file.write(vig_decryption(messages, args.key))
     close_in_and_out_files(in_file, out_file)
 
 
 def count_symbol_frequency(args):
-    # тк входной текст большой, то нет смысла вводить его через консоль,
+    # тк входной текст большой, то нет смысла вводить/выводить его через консоль,
     # поэтому сделаем только ввод из файла(и вывод тоже)
     symbols_freq = defaultdict(int)
     with open(args.input_file, "r") as in_file:
         strings = in_file.read()
-        for string in strings:
-            for char in string:
-                if char in symbols_dict:
-                    symbols_freq[char] += 1
+        for char in strings:
+            if char in symbols_dict:
+                symbols_freq[char] += 1
         with open(args.output_file, "w") as write_file:
             json.dump(symbols_freq, write_file)
 
@@ -109,10 +92,9 @@ def caesar_breaking(args):
     with open(args.file_with_symbols_frequency, "r") as freq_file:
         symbols_freq = json.load(freq_file)
     near_symbols_freq = defaultdict(int)
-    for message in messages:
-        for char in message:
-            if char in symbols_dict:
-                near_symbols_freq[char] += 1
+    for char in messages:
+        if char in symbols_dict:
+            near_symbols_freq[char] += 1
     min_check = 0
     best_step = 0
     for char in symbols_dict:
@@ -125,11 +107,7 @@ def caesar_breaking(args):
         if check < min_check:
             min_check = check
             best_step = step
-    for i in range(len(messages) - 1):
-        out_file.write(caesar_encryption(messages[i], best_step))
-        out_file.write('\n')
-    if len(messages) > 0:
-        out_file.write(caesar_encryption(messages[-1], best_step))
+    out_file.write(caesar_encryption(messages, best_step))
     close_in_and_out_files(in_file, out_file)
 
 
