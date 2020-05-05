@@ -6,8 +6,7 @@ import string
 import math
 
 
-russian_alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-symbols_list = russian_alphabet + string.ascii_letters + string.punctuation + " "
+symbols_list = string.ascii_letters + string.punctuation + " "
 symbols_dict = {char: index for index, char in enumerate(symbols_list)}
 
 
@@ -58,10 +57,8 @@ def count_freq(some_text):
 def count_symbol_frequency(args):
     # тк входной текст большой, то нет смысла вводить/выводить его через консоль,
     # поэтому сделаем только ввод из файла(и вывод тоже)
-    with open(args.input_file, "r") as in_file:
-        symbols_freq = count_freq(in_file.read())
-        with open(args.output_file, "w") as write_file:
-            json.dump(symbols_freq, write_file)
+    symbols_freq = count_freq(args.input_file.read())
+    json.dump(symbols_freq, args.output_file)
 
 
 def caesar_breaking(args):
@@ -74,7 +71,9 @@ def caesar_breaking(args):
     for step in range(0, len(symbols_list)):
         check = 0
         for char in symbols_dict:
-            check += (near_symbols_freq[char] - symbols_freq[shift(char, step)]) ** 2
+            main_freq = symbols_freq.get(shift(char, step))
+            if main_freq is not None:
+                check += (near_symbols_freq[char] - main_freq) ** 2
         if check < min_check:
             min_check = check
             best_step = step
@@ -102,8 +101,8 @@ def argparser():
     parser_decode.set_defaults(func=decode)
 
     parser_symbol_frequency = subparsers.add_parser('count_symbol_frequency')
-    parser_symbol_frequency.add_argument("--input_file", type=argparse.FileType('r'), nargs="?", default=sys.stdin)
-    parser_symbol_frequency.add_argument("--output_file", type=argparse.FileType('w'), nargs="?", default=sys.stdout)
+    parser_symbol_frequency.add_argument("--input_file", type=argparse.FileType('r'))
+    parser_symbol_frequency.add_argument("--output_file", type=argparse.FileType('w'))
     parser_symbol_frequency.set_defaults(func=count_symbol_frequency)
 
     parser_caesar_breaking = subparsers.add_parser('caesar_breaking')
