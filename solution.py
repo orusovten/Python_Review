@@ -33,17 +33,9 @@ def vigenere_encode(line, key_word, sign) -> str:
 def encode(args):
     messages = args.input_file.read()
     if args.cipher == "caesar":
-        args.output_file.write(caesar_encode(messages, int(args.key), 1))
+        args.output_file.write(caesar_encode(messages, int(args.key), args.sign))
     elif args.cipher == "vigenere":
-        args.output_file.write(vigenere_encode(messages, args.key, 1))
-
-
-def decode(args):
-    messages = args.input_file.read()
-    if args.cipher == "caesar":
-        args.output_file.write(caesar_encode(messages, int(args.key), -1))
-    elif args.cipher == "vigenere":
-        args.output_file.write(vigenere_encode(messages, args.key, -1))
+        args.output_file.write(vigenere_encode(messages, args.key, args.sign))
 
 
 def count_freq(some_text):
@@ -66,16 +58,16 @@ def caesar_break(args):
     with open(args.file_with_symbols_frequency, "r") as freq_file:
         symbols_freq = json.load(freq_file)
     near_symbols_freq = count_freq(messages)
-    min_check = math.inf
+    min_difference = math.inf
     best_shift = 0
     for shift in range(len(SYMBOLS_LIST)):
-        check = 0
+        difference = 0
         for char in SYMBOLS_DICT:
             main_freq = symbols_freq.get(shift_symbol(char, shift))
             if main_freq is not None:
-                check += (near_symbols_freq[char] - main_freq) ** 2
-        if check < min_check:
-            min_check = check
+                difference += (near_symbols_freq[char] - main_freq) ** 2
+        if difference < min_difference:
+            min_difference = difference
             best_shift = shift
     args.output_file.write(caesar_encode(messages, best_shift, 1))
 
@@ -87,18 +79,20 @@ def parse_args():
     parser_encode = subparsers.add_parser('encode')
     parser_encode.add_argument("--input_file", type=argparse.FileType('r'), default=sys.stdin)
     parser_encode.add_argument("--output_file", type=argparse.FileType('w'), default=sys.stdout)
-    parser_encode.add_argument("--cipher", choices=["caesar", "vigenereenere"], required=True)
+    parser_encode.add_argument("--cipher", choices=["caesar", "vigenere"], required=True)
     parser_encode.add_argument("--key", help="step(int) if Caesar cipher "
-                               "or key_word(str) if vigenereenere cipher", required=True)
+                               "or key_word(str) if vigenere cipher", required=True)
+    parser_encode.set_defaults(sign=1)
     parser_encode.set_defaults(func=encode)
 
     parser_decode = subparsers.add_parser('decode')
     parser_decode.add_argument("--input_file", type=argparse.FileType('r'), default=sys.stdin)
     parser_decode.add_argument("--output_file", type=argparse.FileType('w'), default=sys.stdout)
-    parser_decode.add_argument("--cipher", choices=["caesar", "vigenereenere"], required=True)
+    parser_decode.add_argument("--cipher", choices=["caesar", "vigenere"], required=True)
     parser_decode.add_argument("--key", help="step(int) if Caesar cipher "
-                               "or key_word(str) if vigenereenere cipher", required=True)
-    parser_decode.set_defaults(func=decode)
+                               "or key_word(str) if vigenere cipher", required=True)
+    parser_decode.set_defaults(sign=-1)
+    parser_decode.set_defaults(func=encode)
 
     parser_symbol_frequency = subparsers.add_parser('count_symbol_frequency')
     parser_symbol_frequency.add_argument("--input_file", type=argparse.FileType('r'), required=True)
